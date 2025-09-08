@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
-
+   	"runtime/debug"
 	a "github.com/Catalyn45/net-html/atom"
 )
 
@@ -698,6 +698,7 @@ func inHeadIM(p *parser) bool {
 			p.oe.pop()
 			p.im = afterHeadIM
 			fmt.Println("head end")
+			debug.PrintStack()
 			return true
 		case a.Body, a.Html, a.Br:
 			fmt.Println(p.tok.DataAtom, " in head, parsing implied head")
