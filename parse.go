@@ -639,7 +639,6 @@ func inHeadIM(p *parser) bool {
 		case a.Fragment:
 			fmt.Println("parsed fragment in head")
 			p.addElement()
-			p.im = inHeadIM
 			return true
 		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta:
 			p.addElement()
