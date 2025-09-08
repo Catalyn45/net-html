@@ -637,6 +637,7 @@ func inHeadIM(p *parser) bool {
 		case a.Html:
 			return inBodyIM(p)
 		case a.Fragment:
+			fmt.Println("parsed fragment in head")
 			p.addElement()
 			p.im = inHeadIM
 			return true
@@ -720,6 +721,7 @@ func inHeadIM(p *parser) bool {
 			p.resetInsertionMode()
 			return true
 		default:
+			fmt.Println("end tag: ", p.tok.DataAtom)
 			// Ignore the token.
 			return true
 		}
