@@ -594,6 +594,7 @@ func beforeHeadIM(p *parser) bool {
 			return true
 		case a.Fragment:
 			p.AddElement()
+			p.im = beforeHeadIM
 			return true
 		case a.Html:
 			return inBodyIM(p)

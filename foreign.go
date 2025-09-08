@@ -77,6 +77,7 @@ var breakout = map[string]bool{
 	"code":       true,
 	"dd":         true,
 	"div":        true,
+	"fragment"    true,
 	"dl":         true,
 	"dt":         true,
 	"em":         true,
