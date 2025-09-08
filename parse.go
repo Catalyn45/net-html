@@ -551,7 +551,7 @@ func beforeHTMLIM(p *parser) bool {
 			return true
 		}
 	case StartTagToken:
-		if p.tok.DataAtom == a.Html || p.tok.DataAtom == a.Fragment {
+		if p.tok.DataAtom == a.Html {
 			p.addElement()
 			p.im = beforeHeadIM
 			return true
@@ -591,10 +591,6 @@ func beforeHeadIM(p *parser) bool {
 			p.addElement()
 			p.head = p.top()
 			p.im = inHeadIM
-			return true
-		case a.Fragment:
-			p.AddElement()
-			p.im = beforeHeadIM
 			return true
 		case a.Html:
 			return inBodyIM(p)
@@ -812,9 +808,6 @@ func afterHeadIM(p *parser) bool {
 			p.framesetOK = false
 			p.im = inBodyIM
 			return true
-		case a.Fragment:
-			p.addElement()
-			return true
 		case a.Frameset:
 			p.addElement()
 			p.im = inFramesetIM
@@ -934,7 +927,7 @@ func inBodyIM(p *parser) bool {
 			p.addElement()
 			p.im = inFramesetIM
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul:
 			p.popUntil(buttonScope, a.P)
 			p.addElement()
 		case a.H1, a.H2, a.H3, a.H4, a.H5, a.H6:
@@ -1146,7 +1139,7 @@ func inBodyIM(p *parser) bool {
 				return false
 			}
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul:
 			p.popUntil(defaultScope, p.tok.DataAtom)
 		case a.Form:
 			if p.oe.contains(a.Template) {
