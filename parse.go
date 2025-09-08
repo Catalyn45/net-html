@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
-   	"runtime/debug"
+
 	a "github.com/Catalyn45/net-html/atom"
 )
 
@@ -636,10 +636,6 @@ func inHeadIM(p *parser) bool {
 		switch p.tok.DataAtom {
 		case a.Html:
 			return inBodyIM(p)
-		case a.Fragment:
-			fmt.Println("parsed fragment in head")
-			p.addElement()
-			return true
 		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta:
 			p.addElement()
 			p.oe.pop()
@@ -655,7 +651,7 @@ func inHeadIM(p *parser) bool {
 			// Don't let the tokenizer go into raw text mode when scripting is disabled.
 			p.tokenizer.NextIsNotRawText()
 			return true
-		case a.Script, a.Title:
+		case a.Script, a.Title, a.Fragment:
 			p.addElement()
 			p.setOriginalIM()
 			p.im = textIM
@@ -697,11 +693,8 @@ func inHeadIM(p *parser) bool {
 		case a.Head:
 			p.oe.pop()
 			p.im = afterHeadIM
-			fmt.Println("head end")
-			debug.PrintStack()
 			return true
 		case a.Body, a.Html, a.Br:
-			fmt.Println(p.tok.DataAtom, " in head, parsing implied head")
 			p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
 			return false
 		case a.Template:
@@ -723,7 +716,6 @@ func inHeadIM(p *parser) bool {
 			p.resetInsertionMode()
 			return true
 		default:
-			fmt.Println("end tag: ", p.tok.DataAtom)
 			// Ignore the token.
 			return true
 		}
@@ -738,7 +730,6 @@ func inHeadIM(p *parser) bool {
 		return true
 	}
 
-	fmt.Println("unknown token: ", p.tok.Type, " : ", p.tok.DataAtom)
 	p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
 	return false
 }
@@ -810,7 +801,6 @@ func afterHeadIM(p *parser) bool {
 		case a.Html:
 			return inBodyIM(p)
 		case a.Body:
-			fmt.Println("Body after head")
 			p.addElement()
 			p.framesetOK = false
 			p.im = inBodyIM
@@ -934,7 +924,7 @@ func inBodyIM(p *parser) bool {
 			p.addElement()
 			p.im = inFramesetIM
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul:
 			p.popUntil(buttonScope, a.P)
 			p.addElement()
 		case a.H1, a.H2, a.H3, a.H4, a.H5, a.H6:
@@ -966,7 +956,7 @@ func inBodyIM(p *parser) bool {
 				switch node.DataAtom {
 				case a.Li:
 					p.oe = p.oe[:i]
-				case a.Address, a.Div, a.P, a.Fragment:
+				case a.Address, a.Div, a.P:
 					continue
 				default:
 					if !isSpecialElement(node) {
@@ -984,7 +974,7 @@ func inBodyIM(p *parser) bool {
 				switch node.DataAtom {
 				case a.Dd, a.Dt:
 					p.oe = p.oe[:i]
-				case a.Address, a.Div, a.P, a.Fragment:
+				case a.Address, a.Div, a.P:
 					continue
 				default:
 					if !isSpecialElement(node) {
@@ -1146,7 +1136,7 @@ func inBodyIM(p *parser) bool {
 				return false
 			}
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul:
 			p.popUntil(defaultScope, p.tok.DataAtom)
 		case a.Form:
 			if p.oe.contains(a.Template) {
