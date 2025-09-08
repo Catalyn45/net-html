@@ -63,7 +63,7 @@ var (
 	defaultScopeStopTags = map[string][]a.Atom{
 		"":     {a.Applet, a.Caption, a.Html, a.Table, a.Td, a.Th, a.Marquee, a.Object, a.Template},
 		"math": {a.AnnotationXml, a.Mi, a.Mn, a.Mo, a.Ms, a.Mtext},
-		"svg":  {a.Desc, a.ForeignObject, a.Title},
+		"svg":  {a.Desc, a.ForeignObject, a.Title, a.Fragment},
 	}
 )
 
@@ -809,7 +809,7 @@ func afterHeadIM(p *parser) bool {
 			p.addElement()
 			p.im = inFramesetIM
 			return true
-		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Script, a.Style, a.Template, a.Title:
+		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Script, a.Style, a.Template, a.Title, a.Fragment:
 			p.oe = append(p.oe, p.head)
 			defer p.oe.remove(p.head)
 			return inHeadIM(p)
@@ -1818,7 +1818,7 @@ func inSelectIM(p *parser) bool {
 			return true
 		case a.Script, a.Template:
 			return inHeadIM(p)
-		case a.Iframe, a.Noembed, a.Noframes, a.Noscript, a.Plaintext, a.Style, a.Title, a.Xmp:
+		case a.Iframe, a.Noembed, a.Noframes, a.Noscript, a.Plaintext, a.Style, a.Title, a.Xmp, a.Fragment:
 			// Don't let the tokenizer go into raw text mode when there are raw tags
 			// to be ignored. These tags should be ignored from the tokenizer
 			// properly.
@@ -1898,7 +1898,7 @@ func inTemplateIM(p *parser) bool {
 		return inBodyIM(p)
 	case StartTagToken:
 		switch p.tok.DataAtom {
-		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Script, a.Style, a.Template, a.Title:
+		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Script, a.Style, a.Template, a.Title, a.Fragment:
 			return inHeadIM(p)
 		case a.Caption, a.Colgroup, a.Tbody, a.Tfoot, a.Thead:
 			p.templateStack.pop()
