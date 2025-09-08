@@ -698,6 +698,10 @@ func inHeadIM(p *parser) bool {
 			p.oe.pop()
 			p.im = afterHeadIM
 			return true
+		case a.Fragment:
+			p.oe.pop()
+			p.im = inHeadIM
+			return true
 		case a.Body, a.Html, a.Br:
 			p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
 			return false
