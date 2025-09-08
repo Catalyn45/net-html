@@ -5,7 +5,7 @@
 package html
 
 import (
-	"github.com/Catalyn45/net/html/atom"
+	"github.com/Catalyn45/net-html/atom"
 )
 
 // A NodeType is the type of a Node.

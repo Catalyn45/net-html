@@ -12,8 +12,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Catalyn45/net/html"
-	"github.com/Catalyn45/net/html/atom"
+	"github.com/Catalyn45/net-html"
+	"github.com/Catalyn45/net-html/atom"
 )
 
 func ExampleParse() {

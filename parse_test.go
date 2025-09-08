@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Catalyn45/net/html/atom"
+	"github.com/Catalyn45/net-html/atom"
 )
 
 type testAttrs struct {

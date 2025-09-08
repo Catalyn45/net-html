@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Catalyn45/net/html/atom"
+	"github.com/Catalyn45/net-html/atom"
 )
 
 // A TokenType is the type of a Token.

@@ -10,7 +10,7 @@ import (
 	"io"
 	"strings"
 
-	a "github.com/Catalyn45/net/html/atom"
+	a "github.com/Catalyn45/net-html/atom"
 )
 
 // A parser implements the HTML5 parsing algorithm:
