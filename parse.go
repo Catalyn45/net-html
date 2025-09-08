@@ -10,7 +10,7 @@ import (
 	"io"
 	"strings"
 
-	a "github.com/Catalyn45/net-html/atom"
+	a "golang.org/x/net/html/atom"
 )
 
 // A parser implements the HTML5 parsing algorithm:
@@ -453,30 +453,30 @@ func (p *parser) resetInsertionMode() {
 					ancestor = p.oe[p.oe.index(ancestor)-1]
 					switch ancestor.DataAtom {
 					case a.Template:
-						p.im = fakeIM
+						p.im = inSelectIM
 						return
 					case a.Table:
-						p.im = fakeIM
+						p.im = inSelectInTableIM
 						return
 					}
 				}
 			}
-			p.im = fakeIM
+			p.im = inSelectIM
 		case a.Td, a.Th:
 			// TODO: remove this divergence from the HTML5 spec.
 			//
 			// See https://bugs.chromium.org/p/chromium/issues/detail?id=829668
-			p.im = fakeIM
+			p.im = inCellIM
 		case a.Tr:
-			p.im = fakeIM
+			p.im = inRowIM
 		case a.Tbody, a.Thead, a.Tfoot:
-			p.im = fakeIM
+			p.im = inTableBodyIM
 		case a.Caption:
-			p.im = fakeIM
+			p.im = inCaptionIM
 		case a.Colgroup:
-			p.im = fakeIM
+			p.im = inColumnGroupIM
 		case a.Table:
-			p.im = fakeIM
+			p.im = inTableIM
 		case a.Template:
 			// TODO: remove this divergence from the HTML5 spec.
 			if n.Namespace != "" {
@@ -487,11 +487,11 @@ func (p *parser) resetInsertionMode() {
 			// TODO: remove this divergence from the HTML5 spec.
 			//
 			// See https://bugs.chromium.org/p/chromium/issues/detail?id=829668
-			p.im = fakeIM
+			p.im = inHeadIM
 		case a.Body:
-			p.im = fakeIM
+			p.im = inBodyIM
 		case a.Frameset:
-			p.im = fakeIM
+			p.im = inFramesetIM
 		case a.Html:
 			if p.head == nil {
 				p.im = beforeHeadIM
@@ -500,7 +500,7 @@ func (p *parser) resetInsertionMode() {
 			}
 		default:
 			if last {
-				p.im = fakeIM
+				p.im = inBodyIM
 				return
 			}
 			continue
@@ -551,7 +551,7 @@ func beforeHTMLIM(p *parser) bool {
 			return true
 		}
 	case StartTagToken:
-		if p.tok.DataAtom == a.Html {
+		if p.tok.DataAtom == a.Html || p.tok.DataAtom == a.Fragment {
 			p.addElement()
 			p.im = beforeHeadIM
 			return true
@@ -590,7 +590,10 @@ func beforeHeadIM(p *parser) bool {
 		case a.Head:
 			p.addElement()
 			p.head = p.top()
-			p.im = fakeIM
+			p.im = inHeadIM
+			return true
+		case a.Fragment:
+			p.AddElement()
 			return true
 		case a.Html:
 			return inBodyIM(p)
@@ -619,10 +622,6 @@ func beforeHeadIM(p *parser) bool {
 	return false
 }
 
-func fakeIM(*parser) bool {
-	return false
-}
-
 // Section 12.2.6.4.4.
 func inHeadIM(p *parser) bool {
 	switch p.tok.Type {
@@ -640,6 +639,9 @@ func inHeadIM(p *parser) bool {
 		switch p.tok.DataAtom {
 		case a.Html:
 			return inBodyIM(p)
+		case a.Fragment:
+			p.addElement()
+			return true
 		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta:
 			p.addElement()
 			p.oe.pop()
@@ -651,7 +653,7 @@ func inHeadIM(p *parser) bool {
 				return true
 			}
 			p.addElement()
-			p.im = fakeIM
+			p.im = inHeadNoscriptIM
 			// Don't let the tokenizer go into raw text mode when scripting is disabled.
 			p.tokenizer.NextIsNotRawText()
 			return true
@@ -688,7 +690,7 @@ func inHeadIM(p *parser) bool {
 			p.addElement()
 			p.afe = append(p.afe, &scopeMarker)
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inTemplateIM
 			p.templateStack = append(p.templateStack, inTemplateIM)
 			return true
 		}
@@ -780,7 +782,7 @@ func inHeadNoscriptIM(p *parser) bool {
 	if p.top().DataAtom != a.Head {
 		panic("html: the new current node will be a head element.")
 	}
-	p.im = fakeIM
+	p.im = inHeadIM
 	if p.tok.DataAtom == a.Noscript {
 		return true
 	}
@@ -807,11 +809,14 @@ func afterHeadIM(p *parser) bool {
 		case a.Body:
 			p.addElement()
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inBodyIM
+			return true
+		case a.Fragment:
+			p.addElement()
 			return true
 		case a.Frameset:
 			p.addElement()
-			p.im = fakeIM
+			p.im = inFramesetIM
 			return true
 		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Script, a.Style, a.Template, a.Title:
 			p.oe = append(p.oe, p.head)
@@ -926,9 +931,9 @@ func inBodyIM(p *parser) bool {
 			}
 			p.oe = p.oe[:1]
 			p.addElement()
-			p.im = fakeIM
+			p.im = inFramesetIM
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Main, a.Menu, a.Nav, a.Ol, a.P, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
 			p.popUntil(buttonScope, a.P)
 			p.addElement()
 		case a.H1, a.H2, a.H3, a.H4, a.H5, a.H6:
@@ -1029,7 +1034,7 @@ func inBodyIM(p *parser) bool {
 			}
 			p.addElement()
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inTableIM
 			return true
 		case a.Area, a.Br, a.Embed, a.Img, a.Input, a.Keygen, a.Wbr:
 			p.reconstructActiveFormattingElements()
@@ -1089,7 +1094,7 @@ func inBodyIM(p *parser) bool {
 			p.reconstructActiveFormattingElements()
 			p.addElement()
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inSelectIM
 			return true
 		case a.Optgroup, a.Option:
 			if p.top().DataAtom == a.Option {
@@ -1140,7 +1145,7 @@ func inBodyIM(p *parser) bool {
 				return false
 			}
 			return true
-		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul:
+		case a.Address, a.Article, a.Aside, a.Blockquote, a.Button, a.Center, a.Details, a.Dialog, a.Dir, a.Div, a.Dl, a.Fieldset, a.Figcaption, a.Figure, a.Footer, a.Header, a.Hgroup, a.Listing, a.Main, a.Menu, a.Nav, a.Ol, a.Pre, a.Search, a.Section, a.Summary, a.Ul, a.Fragment:
 			p.popUntil(defaultScope, p.tok.DataAtom)
 		case a.Form:
 			if p.oe.contains(a.Template) {
@@ -1199,7 +1204,7 @@ func inBodyIM(p *parser) bool {
 	case ErrorToken:
 		// TODO: remove this divergence from the HTML5 spec.
 		if len(p.templateStack) > 0 {
-			p.im = fakeIM
+			p.im = inTemplateIM
 			return false
 		}
 		for _, e := range p.oe {
@@ -1438,12 +1443,12 @@ func inTableIM(p *parser) bool {
 			p.clearStackToContext(tableScope)
 			p.afe = append(p.afe, &scopeMarker)
 			p.addElement()
-			p.im = fakeIM
+			p.im = inCaptionIM
 			return true
 		case a.Colgroup:
 			p.clearStackToContext(tableScope)
 			p.addElement()
-			p.im = fakeIM
+			p.im = inColumnGroupIM
 			return true
 		case a.Col:
 			p.parseImpliedToken(StartTagToken, a.Colgroup, a.Colgroup.String())
@@ -1451,7 +1456,7 @@ func inTableIM(p *parser) bool {
 		case a.Tbody, a.Tfoot, a.Thead:
 			p.clearStackToContext(tableScope)
 			p.addElement()
-			p.im = fakeIM
+			p.im = inTableBodyIM
 			return true
 		case a.Td, a.Th, a.Tr:
 			p.parseImpliedToken(StartTagToken, a.Tbody, a.Tbody.String())
@@ -1490,7 +1495,7 @@ func inTableIM(p *parser) bool {
 			p.addElement()
 			p.fosterParenting = false
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inSelectInTableIM
 			return true
 		}
 	case EndTagToken:
@@ -1538,13 +1543,13 @@ func inCaptionIM(p *parser) bool {
 				return true
 			}
 			p.clearActiveFormattingElements()
-			p.im = fakeIM
+			p.im = inTableIM
 			return false
 		case a.Select:
 			p.reconstructActiveFormattingElements()
 			p.addElement()
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inSelectInTableIM
 			return true
 		}
 	case EndTagToken:
@@ -1552,7 +1557,7 @@ func inCaptionIM(p *parser) bool {
 		case a.Caption:
 			if p.popUntil(tableScope, a.Caption) {
 				p.clearActiveFormattingElements()
-				p.im = fakeIM
+				p.im = inTableIM
 			}
 			return true
 		case a.Table:
@@ -1561,7 +1566,7 @@ func inCaptionIM(p *parser) bool {
 				return true
 			}
 			p.clearActiveFormattingElements()
-			p.im = fakeIM
+			p.im = inTableIM
 			return false
 		case a.Body, a.Col, a.Colgroup, a.Html, a.Tbody, a.Td, a.Tfoot, a.Th, a.Thead, a.Tr:
 			// Ignore the token.
@@ -1610,7 +1615,7 @@ func inColumnGroupIM(p *parser) bool {
 		case a.Colgroup:
 			if p.oe.top().DataAtom == a.Colgroup {
 				p.oe.pop()
-				p.im = fakeIM
+				p.im = inTableIM
 			}
 			return true
 		case a.Col:
@@ -1626,7 +1631,7 @@ func inColumnGroupIM(p *parser) bool {
 		return true
 	}
 	p.oe.pop()
-	p.im = fakeIM
+	p.im = inTableIM
 	return false
 }
 
@@ -1638,14 +1643,14 @@ func inTableBodyIM(p *parser) bool {
 		case a.Tr:
 			p.clearStackToContext(tableBodyScope)
 			p.addElement()
-			p.im = fakeIM
+			p.im = inRowIM
 			return true
 		case a.Td, a.Th:
 			p.parseImpliedToken(StartTagToken, a.Tr, a.Tr.String())
 			return false
 		case a.Caption, a.Col, a.Colgroup, a.Tbody, a.Tfoot, a.Thead:
 			if p.popUntil(tableScope, a.Tbody, a.Thead, a.Tfoot) {
-				p.im = fakeIM
+				p.im = inTableIM
 				return false
 			}
 			// Ignore the token.
@@ -1657,12 +1662,12 @@ func inTableBodyIM(p *parser) bool {
 			if p.elementInScope(tableScope, p.tok.DataAtom) {
 				p.clearStackToContext(tableBodyScope)
 				p.oe.pop()
-				p.im = fakeIM
+				p.im = inTableIM
 			}
 			return true
 		case a.Table:
 			if p.popUntil(tableScope, a.Tbody, a.Thead, a.Tfoot) {
-				p.im = fakeIM
+				p.im = inTableIM
 				return false
 			}
 			// Ignore the token.
@@ -1691,11 +1696,11 @@ func inRowIM(p *parser) bool {
 			p.clearStackToContext(tableRowScope)
 			p.addElement()
 			p.afe = append(p.afe, &scopeMarker)
-			p.im = fakeIM
+			p.im = inCellIM
 			return true
 		case a.Caption, a.Col, a.Colgroup, a.Tbody, a.Tfoot, a.Thead, a.Tr:
 			if p.popUntil(tableScope, a.Tr) {
-				p.im = fakeIM
+				p.im = inTableBodyIM
 				return false
 			}
 			// Ignore the token.
@@ -1705,14 +1710,14 @@ func inRowIM(p *parser) bool {
 		switch p.tok.DataAtom {
 		case a.Tr:
 			if p.popUntil(tableScope, a.Tr) {
-				p.im = fakeIM
+				p.im = inTableBodyIM
 				return true
 			}
 			// Ignore the token.
 			return true
 		case a.Table:
 			if p.popUntil(tableScope, a.Tr) {
-				p.im = fakeIM
+				p.im = inTableBodyIM
 				return false
 			}
 			// Ignore the token.
@@ -1742,7 +1747,7 @@ func inCellIM(p *parser) bool {
 			if p.popUntil(tableScope, a.Td, a.Th) {
 				// Close the cell and reprocess.
 				p.clearActiveFormattingElements()
-				p.im = fakeIM
+				p.im = inRowIM
 				return false
 			}
 			// Ignore the token.
@@ -1751,7 +1756,7 @@ func inCellIM(p *parser) bool {
 			p.reconstructActiveFormattingElements()
 			p.addElement()
 			p.framesetOK = false
-			p.im = fakeIM
+			p.im = inSelectInTableIM
 			return true
 		}
 	case EndTagToken:
@@ -1762,7 +1767,7 @@ func inCellIM(p *parser) bool {
 				return true
 			}
 			p.clearActiveFormattingElements()
-			p.im = fakeIM
+			p.im = inRowIM
 			return true
 		case a.Body, a.Caption, a.Col, a.Colgroup, a.Html:
 			// Ignore the token.
@@ -1776,7 +1781,7 @@ func inCellIM(p *parser) bool {
 			if p.popUntil(tableScope, a.Td, a.Th) {
 				p.clearActiveFormattingElements()
 			}
-			p.im = fakeIM
+			p.im = inRowIM
 			return false
 		}
 	}
@@ -1907,27 +1912,27 @@ func inTemplateIM(p *parser) bool {
 		case a.Caption, a.Colgroup, a.Tbody, a.Tfoot, a.Thead:
 			p.templateStack.pop()
 			p.templateStack = append(p.templateStack, inTableIM)
-			p.im = fakeIM
+			p.im = inTableIM
 			return false
 		case a.Col:
 			p.templateStack.pop()
 			p.templateStack = append(p.templateStack, inColumnGroupIM)
-			p.im = fakeIM
+			p.im = inColumnGroupIM
 			return false
 		case a.Tr:
 			p.templateStack.pop()
 			p.templateStack = append(p.templateStack, inTableBodyIM)
-			p.im = fakeIM
+			p.im = inTableBodyIM
 			return false
 		case a.Td, a.Th:
 			p.templateStack.pop()
 			p.templateStack = append(p.templateStack, inRowIM)
-			p.im = fakeIM
+			p.im = inRowIM
 			return false
 		default:
 			p.templateStack.pop()
 			p.templateStack = append(p.templateStack, inBodyIM)
-			p.im = fakeIM
+			p.im = inBodyIM
 			return false
 		}
 	case EndTagToken:
@@ -1995,7 +2000,7 @@ func afterBodyIM(p *parser) bool {
 		})
 		return true
 	}
-	p.im = fakeIM
+	p.im = inBodyIM
 	return false
 }
 
@@ -2113,7 +2118,7 @@ func afterAfterBodyIM(p *parser) bool {
 	case DoctypeToken:
 		return inBodyIM(p)
 	}
-	p.im = fakeIM
+	p.im = inBodyIM
 	return false
 }
 
