@@ -738,7 +738,7 @@ func inHeadIM(p *parser) bool {
 		return true
 	}
 
-	fmt.Println("unknown token: ", p.tok)
+	fmt.Println("unknown token: ", p.tok.Type, " : ", p.tok.DataAtom)
 	p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
 	return false
 }
