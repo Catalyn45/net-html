@@ -620,7 +620,7 @@ func beforeHeadIM(p *parser) bool {
 }
 
 func fakeIM(*parser) bool {
-	return true
+	return false
 }
 
 // Section 12.2.6.4.4.
