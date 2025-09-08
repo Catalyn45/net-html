@@ -638,6 +638,7 @@ func inHeadIM(p *parser) bool {
 			return inBodyIM(p)
 		case a.Fragment:
 			p.addElement()
+			p.im = inHeadIM
 			return true
 		case a.Base, a.Basefont, a.Bgsound, a.Link, a.Meta:
 			p.addElement()
