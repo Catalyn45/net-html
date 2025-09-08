@@ -698,8 +698,10 @@ func inHeadIM(p *parser) bool {
 		case a.Head:
 			p.oe.pop()
 			p.im = afterHeadIM
+			fmt.Println("head end")
 			return true
 		case a.Body, a.Html, a.Br:
+			fmt.Println(p.tok.DataAtom, " in head, parsing implied head")
 			p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
 			return false
 		case a.Template:
@@ -807,6 +809,7 @@ func afterHeadIM(p *parser) bool {
 		case a.Html:
 			return inBodyIM(p)
 		case a.Body:
+			fmt.Println("Body after head")
 			p.addElement()
 			p.framesetOK = false
 			p.im = inBodyIM
